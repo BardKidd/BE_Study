@@ -1,5 +1,41 @@
-import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+
+interface FormData {
+  items: {
+    username: string;
+    age: string;
+    email: string;
+    remark: string;
+  }[];
+}
+
+const boxStyle: React.CSSProperties = {
+  marginBottom: 24,
+  padding: 20,
+  borderRadius: 12,
+  background: '#f9fafb',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+  border: '1px solid #e5e7eb',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  position: 'relative',
+};
+
+const inputStyle = {
+  padding: '10px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  fontSize: '1rem',
+};
+
+const textareaStyle = {
+  padding: '10px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  fontSize: '1rem',
+  minHeight: '60px',
+};
 
 const MyFormStudy = () => {
   const {
@@ -7,35 +43,7 @@ const MyFormStudy = () => {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm();
-
-  const boxStyle = {
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 12,
-    background: '#f9fafb',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-    border: '1px solid #e5e7eb',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    position: 'relative',
-  };
-
-  const inputStyle = {
-    padding: '10px',
-    borderRadius: '6px',
-    border: '1px solid #d1d5db',
-    fontSize: '1rem',
-  };
-
-  const textareaStyle = {
-    padding: '10px',
-    borderRadius: '6px',
-    border: '1px solid #d1d5db',
-    fontSize: '1rem',
-    minHeight: '60px',
-  };
+  } = useForm<FormData>();
 
   const basicRowData = {
     username: '',
@@ -48,9 +56,9 @@ const MyFormStudy = () => {
     fields: itemFields,
     append: appendItem,
     remove: removeItem,
-  } = useFieldArray({ control, name: 'items' });
+  } = useFieldArray<FormData, 'items'>({ control, name: 'items' });
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: FormData) => {
     console.log(data);
     console.log(errors);
   };
