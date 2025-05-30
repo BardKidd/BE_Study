@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAbility } from '../contexts';
 
-export function PermissionLink({ to, subject, children }) {
+export function PermissionLink({ to, subject, children, className }) {
   const ability = useAbility();
 
   const canAccess =
@@ -15,13 +15,12 @@ export function PermissionLink({ to, subject, children }) {
     marginRight: '1rem',
   };
 
-  // 不顯示的效果
   if (!canAccess) {
     return null;
   }
 
   return (
-    <Link to={to} style={styles}>
+    <Link to={to} style={styles} className={className}>
       {children}
     </Link>
   );

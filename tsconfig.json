@@ -11,6 +11,10 @@
     "forceConsistentCasingInFileNames": true /* 檔案引入時強制區分大小寫，避免跨平台問題 */,
     "strict": true /* 啟用所有嚴格型別檢查 (更安全) */,
     "skipLibCheck": true /* 跳過 node_modules 內部型別檢查，加快編譯速度 */,
-    "moduleResolution": "node" /* 模組解析策略，Node.js 標準 */
+    "moduleResolution": "node" /* 模組解析策略，Node.js 標準 */,
+    "baseUrl": "." /* 基礎路徑，讓相對路徑更簡潔 */,
+    "paths": {
+      "@/*": ["src/*"] /* 設定別名，讓 src 目錄下的檔案可以用 @/ 開頭引入 */
+    }
   }
 }
