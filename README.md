@@ -291,3 +291,130 @@ const MyFormStudy = () => {
 
 export default MyFormStudy;
 ```
+
+## 8. 整合 UI Library (以 shadcn/ui 為例)
+
+> 基本資料可以參考 shadcn_ui.md。
+
+schadcn/ui 有個 `react-hook-form` 的整合套件，可以讓我們更方便地使用。
+
+```bash
+npx shadcn@latest add form
+```
+
+常用的 Form 相關元件：
+
+```tsx
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+```
+
+跟前面的寫法有點差異，會需要改寫一下原始宣告的方法，且 form 會被包在 `<Form>` 元件中，而每個欄位則使用 `<FormField>` 包裝。
+
+```tsx
+// 改為這樣宣告而不是直接解構是因為之後會需要將 form 傳入 Form 元件中
+const form = useForm();
+const { handleSubmit, control } = form;
+
+<Form {...form}>
+  <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+    {/* other code */}
+
+    {/* 舊寫法 */}
+    {/* 
+      <input
+        style={inputStyle}
+        placeholder="Username"
+        {...register(`items.${index}.username`)}
+      /> 
+    */}
+    {/* 新寫法 */}
+    <FormField
+      control={control}
+      name={`items.${index}.username`}
+      render={() => (
+        <FormItem>
+          <FormLabel className="text-cyan-300 font-semibold text-base tracking-wide drop-shadow">
+            Username
+          </FormLabel>
+          <FormControl>
+            <Input className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </form>
+</Form>;
+```
+
+改變動向：
+
+- 除了 `useFieldArray` 需要 `control` 外，`FormField` 也需要傳入 `control`。這個是固定寫法。
+- 原本使用 `register` 的方式改為使用 `FormField` 的 `name` 屬性來指定欄位名稱。
+- `render` 可以直接將舊版的 JSX 元素放入。
+
+直接使用原生的用法就好了為什麼要多包一層？  
+這是因為 `FormField` 會自動處理錯誤訊息的顯示與欄位狀態的管理，讓我們不需要手動去處理驗證錯誤。
+
+- 搭配 `FormMessage` 中顯示錯誤訊息
+- 搭配 `FormLabel` 中顯示欄位名稱
+- 搭配 `FormDescription` 中顯示欄位描述
+
+## 9. 驗證 (以 Zod 為例)
+
+React Hook Form 支援多種驗證庫，這裡以 Zod 為例。
+
+```bash
+npm install zod @hookform/resolvers
+```
+
+常見的驗證方式：
+
+```jsx
+import { z } from 'zod';
+
+// 定義物件
+export const ItemSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  age: z.string().min(1, 'Age is required'),
+  email: z.string().email('Invalid email'),
+  remark: z.string().optional(),
+});
+
+// 傳給陣列並確認結構
+export const FormSchema = z.object({
+  items: z.array(ItemSchema).min(1, 'At least one item is required'),
+});
+
+export type FormSchemaType = z.infer<typeof FormSchema>;
+```
+
+在 `useForm` 中使用：
+
+```jsx
+import { FormSchema, FormSchemaType } from '@/validation/formSchema';
+
+const form = useForm<FormSchemaType>({
+  resolver: zodResolver(FormSchema),
+  defaultValues: { items: [] },
+  mode: 'onSubmit', // 只在 submit 時驗證
+  reValidateMode: 'onBlur',
+});
+
+const {
+  fields: itemFields,
+  append: appendItem,
+  remove: removeItem,
+} = useFieldArray<FormSchemaType, 'items'>({ control, name: 'items' });
+
+const onSubmit = (data: FormSchemaType) => {
+  console.log(data);
+};
+```
