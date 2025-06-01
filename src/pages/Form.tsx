@@ -2,40 +2,41 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FormSchema, FormSchemaType } from '@/validation/formSchema';
 
-interface FormData {
-  items: {
-    username: string;
-    age: string;
-    email: string;
-    remark: string;
-  }[];
-}
+const basicRowData = {
+  username: '',
+  age: '',
+  email: '',
+  remark: '',
+};
 
 const MyFormStudy = () => {
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<FormData>();
-
-  const basicRowData = {
-    username: '',
-    age: '',
-    email: '',
-    remark: '',
-  };
+  const form = useForm<FormSchemaType>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: { items: [] },
+    mode: 'onSubmit', // 只在 submit 時驗證
+    reValidateMode: 'onBlur',
+  });
+  const { handleSubmit, control } = form;
 
   const {
     fields: itemFields,
     append: appendItem,
     remove: removeItem,
-  } = useFieldArray<FormData, 'items'>({ control, name: 'items' });
+  } = useFieldArray<FormSchemaType, 'items'>({ control, name: 'items' });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: FormSchemaType) => {
     console.log(data);
-    console.log(errors);
   };
 
   return (
@@ -44,56 +45,101 @@ const MyFormStudy = () => {
         <h1 className="text-3xl font-bold text-cyan-300 mb-6 text-center drop-shadow">
           Dynamic Form
         </h1>
-        <button
+        <Button
           type="button"
           onClick={() => appendItem(basicRowData)}
           className="mb-6 px-4 py-2 rounded-lg bg-cyan-600 text-white font-semibold shadow hover:bg-cyan-500 transition"
         >
           Add new row
-        </button>
+        </Button>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-          {itemFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="flex flex-col gap-3 bg-gray-800/80 rounded-xl p-6 border border-gray-600 shadow"
-            >
-              <Input
-                className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Username"
-                {...register(`items.${index}.username`)}
-              />
-              <Input
-                className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Age"
-                {...register(`items.${index}.age`)}
-              />
-              <Input
-                className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Email"
-                {...register(`items.${index}.email`)}
-              />
-              <Textarea
-                className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 min-h-[60px]"
-                placeholder="Remark"
-                {...register(`items.${index}.remark`)}
-              />
-              <Button
-                type="button"
-                onClick={() => removeItem(index)}
-                className="self-end mt-2 px-3 py-1 rounded bg-red-500 text-white font-semibold hover:bg-red-600 transition"
-              >
-                Remove this row
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="submit"
-            className="mt-4 px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-500 transition"
+        <Form {...form}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
           >
-            Submit
-          </Button>
-        </form>
+            {itemFields.map((field, index) => (
+              <div
+                key={field.id}
+                className="flex flex-col gap-3 bg-gray-800/80 rounded-xl p-6 border border-gray-600 shadow"
+              >
+                <FormField
+                  control={control}
+                  name={`items.${index}.username`}
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-cyan-300 font-semibold text-base tracking-wide drop-shadow">
+                        Username
+                      </FormLabel>
+                      <FormControl>
+                        <Input className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`items.${index}.age`}
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-cyan-300 font-semibold text-base tracking-wide drop-shadow">
+                        Age
+                      </FormLabel>
+                      <FormControl>
+                        <Input className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`items.${index}.email`}
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-cyan-300 font-semibold text-base tracking-wide drop-shadow">
+                        Email
+                      </FormLabel>
+                      <FormControl>
+                        <Input className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name={`items.${index}.remark`}
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-cyan-300 font-semibold text-base tracking-wide drop-shadow">
+                        Remark
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 min-h-[60px]" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="self-end mt-2 px-3 py-1 rounded bg-red-500 text-white font-semibold hover:bg-red-600 transition"
+                >
+                  Remove this row
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="submit"
+              className="mt-4 px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-500 transition"
+            >
+              Submit
+            </Button>
+          </form>
+        </Form>
       </div>
     </div>
   );
