@@ -1,4 +1,7 @@
 import { useForm, useFieldArray } from 'react-hook-form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface FormData {
   items: {
@@ -55,41 +58,41 @@ const MyFormStudy = () => {
               key={field.id}
               className="flex flex-col gap-3 bg-gray-800/80 rounded-xl p-6 border border-gray-600 shadow"
             >
-              <input
+              <Input
                 className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 placeholder="Username"
                 {...register(`items.${index}.username`)}
               />
-              <input
+              <Input
                 className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 placeholder="Age"
                 {...register(`items.${index}.age`)}
               />
-              <input
+              <Input
                 className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 placeholder="Email"
                 {...register(`items.${index}.email`)}
               />
-              <textarea
+              <Textarea
                 className="px-4 py-2 rounded bg-gray-900 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 min-h-[60px]"
                 placeholder="Remark"
                 {...register(`items.${index}.remark`)}
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => removeItem(index)}
                 className="self-end mt-2 px-3 py-1 rounded bg-red-500 text-white font-semibold hover:bg-red-600 transition"
               >
                 Remove this row
-              </button>
+              </Button>
             </div>
           ))}
-          <button
+          <Button
             type="submit"
             className="mt-4 px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-500 transition"
           >
             Submit
-          </button>
+          </Button>
         </form>
       </div>
     </div>
