@@ -1,84 +1,107 @@
-# Turborepo starter
+# NestJS + TypeORM + MySQL 實戰
 
-This Turborepo starter is maintained by the Turborepo core team.
+本專案使用 pnpm 管理套件。
 
-## Using this example
+## 安裝必要套件
 
-Run the following command:
+- @nestjs/typeorm + typeorm
 
-```sh
-npx create-turbo@latest
+> typeorm 是 TypeORM 的核心函式庫  
+> @nestjs/typeorm 是讓 NestJS 的整合包。可以整合並使用 TypeORM。
+
+可以用來定義資料表(Entity)，使用上就類似撰寫 TypeScript 類別。  
+也可以自動產生 SQL 指令來指令來建立/查詢/更新/刪除資料表。
+
+```ts
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+}
 ```
 
-## What's inside?
+- mysql2
 
-This Turborepo includes the following packages/apps:
+> MySQL 的驅動程式。
 
-### Apps and Packages
+TypeORM 沒有支援所有的資料庫，所以需要安裝對應的 driver 才能正常工作。
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- @nestjs/config
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+> NestJS 官方的設定模組，可以用來讀取與管理環境變數(process.env)。  
+> 需要使用環境變數還需要額外安裝 dotenv 套件。
 
-### Utilities
+- dotenv
 
-This Turborepo has some additional tools already setup for you:
+> 來讀取 .env 檔案內容到 process.env 當中。
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## 設定 NestJS 使用 .env 連接 MySQL
 
-### Build
+> 目標：讓 NestJS 可以讀取 .env 檔案，並使用 TypeORM 連接 MySQL。
 
-To build all apps and packages, run the following command:
+先放上修改的內容，下面再說明。
 
-```
-cd my-turborepo
-pnpm build
-```
+```ts
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // 全域可使用 .env
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get('DB_HOST'),
+        port: parseInt(config.get('DB_PORT'), 10),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
+        database: config.get('DB_NAME'),
+        autoLoadEntities: true,
+        synchronize: true, // 注意：在生產環境中不建議使用 synchronize
+      }),
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
 ```
 
-## Useful Links
+### imports 是什麼？
 
-Learn more about the power of Turborepo:
+這是 NestJS 中 Module 的一個屬性，用來引入其他模組的功能，可以想像成「裝備零件」。
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+AppModule 可以想像成總控制的大模組，imports 就是要進來組裝的小零件。
+
+#### ConfigModule
+
+> 用來幫你把 .env 的內容「讀進來」，再用 ConfigService 讓你在任何地方都可以「讀取設定值」。
+
+- `.forRoot({})`
+  - `isGlobal`: 設定為 `true` 的話表示整個應用程式內都可以使用 `ConfigService`，不需要每個模組都手動 `imports: [ConfigModule]`。
+
+#### ConfigService
+
+> 在任何地方都能讀取 .env 的設定值。搭配 TypeScript 使用時，可以提供型別檢查。
+
+```ts
+config.get<string>('DB_HOST'); // 可以搭配 TypeScript 來寫型別，使用上比 process.env 更安全。
+```
+
+#### TypeOrmModule.forRootAsync()
+
+> 用來設定資料庫參數。
+
+- inject: [ConfigService] -> 告訴 NestJS 要把 ConfigService 注入進來。
+- useFactory: -> 回傳資料庫的設定。
