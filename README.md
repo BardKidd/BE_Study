@@ -105,3 +105,58 @@ config.get<string>('DB_HOST'); // 可以搭配 TypeScript 來寫型別，使用�
 
 - inject: [ConfigService] -> 告訴 NestJS 要把 ConfigService 注入進來。
 - useFactory: -> 回傳資料庫的設定。
+
+## 建立資料表(Entity) 與對應的 API
+
+> 目標：建立簡單的 User 資料表 + CRUD API。
+
+快速產生完整 CRUD 結構
+
+```bash
+pnpm nest g resource user
+```
+
+幫你產生以下的檔案結構
+
+```
+src/user/
+├── dto/
+│   ├── create-user.dto.ts
+│   └── update-user.dto.ts
+├── entities/
+│   └── user.entity.ts
+├── user.controller.ts
+├── user.module.ts
+├── user.service.ts
+
+```
+
+## 定義 User 資料表(Entity)
+
+> 目標：定義 User 資料表的欄位與型別。
+
+```ts
+// src/user/entities/user.entity.ts
+
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+```
