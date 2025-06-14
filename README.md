@@ -133,6 +133,7 @@ src/user/
 
 ## 定義 User 資料表(Entity)
 
+> class-validator class-transformer
 > 目標：定義 User 資料表的欄位與型別。
 
 ```ts
@@ -158,5 +159,182 @@ export class User {
 
   @CreateDateColumn()
   createdAt: Date;
+}
+```
+
+## 使用 class-validator 進行 DTO 驗證
+
+> 目標：透過 `class-validator` 套件為輸入資料加上驗證條件，避免寫入不合法資料
+
+### 安裝相關條件
+
+```bash
+pnpm add class-validator class-transformer
+```
+
+### 啟用全域驗證管道 (main.ts)
+
+```ts
+import { ValidationPipe } from '@nest/common';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipe(new ValidationPipe());
+  await app.listen(process.env.PORT ?? 3000);
+}
+```
+
+### 定義 DTO 欄位驗證(create-user.dto.ts)
+
+```ts
+import { IsNotEmpty, IsEmail } from 'class-validator';
+
+export class CreateUserDto {
+  @IsNotEmpty({ message: 'Name is required' })
+  name: string;
+
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  email: string;
+}
+```
+
+## 整理 Swagger 產生自動化 API 文件
+
+> 目標：使用 Swagger 自動產生 /api 頁面，方便查看與測試 API
+
+### 安裝套件
+
+```bash
+pnpm add @nestjs/swagger swagger-ui-express
+```
+
+### 修改 main.ts 設定 Swagger
+
+```ts
+// other imports
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+async function bootstrap() {
+  // other code
+
+  const config = new DocumentBuild()
+    .setTime('User API')
+    .setDescription('The User API for managing users')
+    .setVersion('1.0')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  //...
+}
+```
+
+### @ApiTags 給 API 分類 (user.controller.ts)
+
+```ts
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('user')
+@Controller('user')
+export class UserController { ... }
+```
+
+### 使用 @ApiProperty 描述 DTO 欄位 (create-user.dto.ts)
+
+```ts
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsEmail } from 'class-validator';
+
+export class CreateUserDto {
+  @ApiProperty({ example: 'Alice', description: '使用者名稱' })
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ example: 'alice@example.com', description: '電子信箱' })
+  @IsEmail()
+  email: string;
+}
+```
+
+設定完成後可以去看看是否有成功
+
+```
+http://localhost:3000/api
+```
+
+## 全域錯誤處理 (Exception Filter)
+
+> 目標：統一 API 的錯誤回傳格式，讓前端更容易處理錯誤。
+
+### 建立 Exception Filter
+
+```ts
+// src/common/filters/http-exception.filter.ts
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    response.status(status).json({
+      status: false,
+      error: {
+        code: status,
+        message,
+        path: request.url,
+      },
+    });
+  }
+}
+```
+
+> implements 是 TypeScript 裡面用來保證某個 class 實作 interface 的語法。
+> 註：ExceptionFilter 規定了必須要有 catch(exception: unknown, host: ArgumentsHost): void 的寫法
+
+### 註冊痊癒錯誤處理器
+
+在 `main.ts` 中加入：
+
+```ts
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new AllExceptionsFilter());
+  // ...
+}
+```
+
+這樣就能把 NestJS 預設錯誤格式統一改為自訂格式，例如：
+
+```json
+{
+  "status": false,
+  "error": {
+    "code": 404,
+    "message:" "User not found",
+    "path": "/user/abc"
+  }
 }
 ```
