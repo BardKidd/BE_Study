@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { User } from './user/entities/user.entity'; // 引入 User Entity
+import { Post } from './post/entities/post.entity'; // 引入 Post Entity
 import { PostModule } from './post/post.module';
 
 @Module({
@@ -25,8 +27,11 @@ import { PostModule } from './post/post.module';
           username: config.get<string>('DB_USERNAME'),
           password: config.get<string>('DB_PASSWORD'),
           database: config.get<string>('DB_NAME'),
-          autoLoadEntities: true,
-          synchronize: true, // 注意：在生產環境中不建議使用 synchronize
+          entities: [User, Post], // 明確列出所有 Entity
+          migrations: [__dirname + '/migrations/**/*{.ts,.js}'], // Migration 檔案的路徑
+          migrationsRun: false, // 應用程式啟動時不自動執行 migration
+          migrationsTableName: 'typeorm_migrations', // 儲存 migration 記錄的資料表名稱
+          synchronize: false, // IMPORTANT: 在生產環境中應始終為 false，由 migration 管理
         };
       },
     }),
