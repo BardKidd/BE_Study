@@ -1,0 +1,28 @@
+@userId=ba547eb8-c6ff-4b5d-b1e4-a936fa64dcb3
+@postId=7e221484-6e1a-4d92-b733-e11111be2fa0
+
+### 建立廢文資料(POST)
+POST http://localhost:3000/post
+Content-Type: application/json
+
+{
+  "title": "Hi I'm Taki!",
+  "content": "I love Tomorin~",
+  "userId": "ba547eb8-c6ff-4b5d-b1e4-a936fa64dcb3"
+}
+
+### 取得廢文列表順便抓出是誰發的廢文(GET)
+GET http://localhost:3000/post/{{userId}}
+Content-Type: application/json
+
+### 編輯廢文(PATCH)
+PATCH http://localhost:3000/post/{{postId}}
+Content-Type: application/json
+
+{
+  "title": "Umirin Editing",
+  "content": "TakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisukiTakisuki"
+}
+
+### 刪除廢文(DELETE)
+DELETE http://localhost:3000/post/{{postId}}

@@ -3,8 +3,8 @@ POST http://localhost:3000/user
 Content-Type: application/json
 
 {
-  "name": "Alice",
-  "email": "alice@example.com"
+  "name": "Taki",
+  "email": "taki@mygo.com"
 }
 
 ### 取得使用者列表(GET)
