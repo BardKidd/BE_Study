@@ -40,7 +40,7 @@ const MyFormStudy = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
+    <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
       <div className="bg-gray-700/80 rounded-2xl shadow-2xl p-10 max-w-2xl w-full border border-gray-600">
         <h1 className="text-3xl font-bold text-cyan-300 mb-6 text-center drop-shadow">
           Dynamic Form

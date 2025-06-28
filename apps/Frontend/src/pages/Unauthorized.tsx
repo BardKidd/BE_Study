@@ -1,6 +1,6 @@
 const Unauthorized = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
+    <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
       <div className="bg-gray-800 rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md w-full">
         <h1 className="text-4xl font-extrabold text-red-400 mb-4 drop-shadow">
           Unauthorized

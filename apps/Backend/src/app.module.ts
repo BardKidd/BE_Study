@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { User } from './user/entities/user.entity'; // 引入 User Entity
 import { Post } from './post/entities/post.entity'; // 引入 Post Entity
 import { PostModule } from './post/post.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { PostModule } from './post/post.module';
     }),
     UserModule,
     PostModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
