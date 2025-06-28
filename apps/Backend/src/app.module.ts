@@ -8,9 +8,19 @@ import { User } from './user/entities/user.entity'; // 引入 User Entity
 import { Post } from './post/entities/post.entity'; // 引入 Post Entity
 import { PostModule } from './post/post.module';
 import { AuthModule } from './auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    UserModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'), // 從 .env 檔案讀取 JWT_SECRET
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
     // 全域連線資料庫
     ConfigModule.forRoot({
       isGlobal: true, // 全域可使用 .env
@@ -36,7 +46,6 @@ import { AuthModule } from './auth/auth.module';
         };
       },
     }),
-    UserModule,
     PostModule,
     AuthModule,
   ],

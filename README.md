@@ -532,3 +532,136 @@ pnpm migration:show
 - 在生產環境執行 migration 前先備份資料庫
 - 測試 migration 的 up 和 down 方法
 - 避免在 migration 中刪除重要資料
+
+## 使用者認證 (JWT) 與密碼安全
+
+> 目標：建立一個安全的使用者註冊與登入流程，並使用 JWT (JSON Web Token) 作為使用者狀態管理的通行證。
+
+### 學習重點
+- **密碼雜湊**: 使用 `bcrypt` 套件對使用者密碼進行加鹽雜湊，避免在資料庫中儲存明文密碼。
+- **DTO 驗證**: 為註冊和登入的 DTO 加上 `class-validator` 規則，從入口處阻擋無效請求。
+- **JWT 簽發**: 在使用者成功登入後，使用 `@nestjs/jwt` 簽發一個包含使用者資訊的 JWT。
+- **非同步模組設定**: 使用 `JwtModule.registerAsync` 配合 `ConfigService`，安全地從環境變數載入 JWT Secret。
+
+### 核心流程程式碼範例
+
+#### 1. 在 DTO 中加入密碼欄位與驗證
+
+```ts
+// src/user/dto/create-user.dto.ts
+import { IsNotEmpty, IsEmail, IsString, MinLength } from 'class-validator';
+
+export class CreateUserDto {
+  // ... name 和 email 欄位
+  
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @IsNotEmpty({ message: 'Password is required' })
+  password: string;
+}
+```
+
+#### 2. 在 Service 中進行密碼雜湊
+
+```ts
+// src/user/user.service.ts
+import * as bcrypt from 'bcrypt';
+
+// ...
+async create(createUserDto: CreateUserDto) {
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(
+    createUserDto.password,
+    saltRounds,
+  );
+
+  const newUser = this.userRepository.create({
+    ...createUserDto,
+    password: hashedPassword,
+  });
+
+  return this.userRepository.save(newUser);
+}
+```
+
+#### 3. 在 AuthService 中驗證使用者並簽發 JWT
+
+```ts
+// src/auth/auth.service.ts
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../user/user.service';
+// ...
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async signIn(email: string, password: string): Promise<{ access_token: string }> {
+    const user = await this.userService.findUserForAuth(email);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: user.id, email: user.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+}
+```
+
+#### 4. 安全地設定 AuthModule
+
+```ts
+// src/auth/auth.module.ts
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+@Module({
+  imports: [
+    UserModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
+  ],
+  // ...
+})
+export class AuthModule {}
+```
+
+### 開發細節與注意事項
+
+#### 1. `select: false` 與 `QueryBuilder`
+為了安全，`User` Entity 中的 `password` 欄位應設定為 `select: false`，使其在一般查詢中不會被回傳。但在驗證密碼時，我們又需要取得它。這時就必須使用 `QueryBuilder`。
+
+```ts
+// src/user/user.service.ts
+
+// 專門給 AuthService 使用的查詢方法
+async findUserForAuth(email: string): Promise<User | undefined> {
+  return this.userRepository
+    .createQueryBuilder('user')
+    .where('user.email = :email', { email })
+    .addSelect('user.password') // 關鍵：強制選取 password 欄位
+    .getOne();
+}
+```
+
+#### 2. 安全的錯誤回傳
+在 `AuthService` 的 `signIn` 方法中，無論是「使用者不存在」還是「密碼錯誤」，都應該回傳**完全相同**的錯誤訊息（例如 `Invalid credentials`）。這可以防止攻擊者透過錯誤訊息的差異來猜測哪個帳號是存在的。
+
+#### 3. JWT Secret 的管理
+JWT Secret 是系統安全的核心，**絕對不能**硬編碼在程式碼中。
+- **開發環境**: 將其存放在 `.env` 檔案中。
+- **生產環境**: 使用雲端服務商提供的秘密管理工具（如 AWS Secrets Manager, GCP Secret Manager）或作業系統的環境變數來管理。
+- **`.gitignore`**: 確保 `.env` 檔案被加入到 `.gitignore` 中，避免將密鑰洩漏到版本控制系統。

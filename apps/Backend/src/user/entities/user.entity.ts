@@ -21,6 +21,9 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
+  @Column({ select: false }) // 預設查詢時不會返回密碼
+  password: string;
+
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
 }
